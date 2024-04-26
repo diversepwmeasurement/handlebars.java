@@ -1,33 +1,42 @@
-name: Build
-
-on: [push]
-
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: self-hosted
+    steps:
+    - continue-on-error: true
+      name: Checkout
+      uses: actions/checkout@v1
+    - continue-on-error: true
+      name: Mustache Specs
+      run: 'git submodule update --init --recursive
+
+        '
+    - continue-on-error: true
+      name: Set up JDK ${{ matrix.java_version }}
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java_version }}
+    - continue-on-error: true
+      env:
+        BUILD_PORT: 0
+        BUILD_SECURE_PORT: 0
+      name: Install
+      run: mvn clean install -DskipTests --batch-mode --no-transfer-progress
+    - continue-on-error: true
+      env:
+        BUILD_PORT: 0
+        BUILD_SECURE_PORT: 0
+      name: Build
+      run: mvn clean package --batch-mode --no-transfer-progress
     strategy:
       fail-fast: false
       matrix:
-        java_version: [17]
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v1
-      - name: Mustache Specs
-        run: |
-          git submodule update --init --recursive
-      - name: Set up JDK ${{ matrix.java_version }}
-        uses: actions/setup-java@v1
-        with:
-          java-version: ${{ matrix.java_version }}
-      - name: Install
-        run: mvn clean install -DskipTests --batch-mode --no-transfer-progress
-        env:
-          BUILD_PORT: 0
-          BUILD_SECURE_PORT: 0
-      - name: Build
-        run: mvn clean package --batch-mode --no-transfer-progress
-        env:
-          BUILD_PORT: 0
-          BUILD_SECURE_PORT: 0
+        java_version:
+        - 17
+        os:
+        - ubuntu-latest
+        - windows-latest
+        - macOS-latest
+name: Build
+on:
+  repository_dispatch:
+    types: trigger-ga___build-matrix.yml
